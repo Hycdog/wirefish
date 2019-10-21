@@ -5,10 +5,8 @@ import time
 
 from PyQt5.QtGui import QFont
 
-from utils.var import VAR
 from scapy.layers.inet import icmptypes
 
-from utils import win_get_key
 from netifaces import ifaddresses, AF_INET, AF_INET6
 import start_page
 import sys
@@ -20,7 +18,7 @@ from utils import packet_r
 from ctypes import *
 import netifaces
 from start_page import Ui_MainWindow
-from capture import Ui_Dialog
+from capture_ui import Ui_Dialog
 from utils.packet_r import igmptypes
 
 
@@ -92,7 +90,6 @@ class childWindow(QDialog):
         self.dstset = set()
         self.protocolset = set()
         self.capture_ui=Ui_Dialog()
-        self.share = VAR()
         self.capture_ui.setupUi(self)
         self.parentWindow = None
         self.capture_ui.pushButton.setText("Start")

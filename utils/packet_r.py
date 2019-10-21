@@ -1,6 +1,5 @@
 import os
 from contextlib import contextmanager
-from utils.var import VAR
 
 
 @contextmanager
