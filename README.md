@@ -2,7 +2,7 @@
 
 In wirefish, we provide a very simple gui to select network interface, capture packets and decode packets. These functionalities are all based on Scapy.
 
-####Select a network interface
+#### Select a network interface
 In order to capture packets, first of all, we need to get the info about the network interfaces that we want to listen.
 Using scapy, for example, we only need to do this:<br>
 `>>> from scapy.all import *`<br> 
@@ -23,6 +23,6 @@ Then, we expand the packet, turn it into a list of tuples, each contains part of
 #### Multitasking
 Python3 does not truly support multithreading. However, PyQt does,  due to its backend written in C/C++, so we just run a main thread that interact with the user, while capturing the packets using another thread in the background.
 
-####TODO
+#### TODO
 Filter parser instead of multiple ComboBoxes.
 
