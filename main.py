@@ -14,13 +14,22 @@ from scapy.all import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame
 from PyQt5.QtCore import QThread,pyqtSignal
 from PyQt5 import QtWidgets,QtCore,QtGui
-from utils import packet_r
 from ctypes import *
 import netifaces
 from start_page import Ui_MainWindow
 from capture_ui import Ui_Dialog
-from utils.packet_r import igmptypes
 
+
+def expand(packet):
+    x = packet
+    yield x.name, x.fields
+    while x.payload:
+        x = x.payload
+        yield x.name, x.fields
+
+
+def packet_to_layerlist(packet):
+    return list(expand(packet))
 
 class parentWindow(QMainWindow):
     def __init__(self):
@@ -186,6 +195,8 @@ class childWindow(QDialog):
             self.capture_ui.tableWidget.scrollToBottom()
 
 
+
+
     def stop_capture(self):
         try:
             self.capthread.stop()
@@ -282,8 +293,8 @@ class childWindow(QDialog):
             self.clearTab()
             rowc = self.sender().currentItem().row()
             packet = self.packet_dict[int(self.sender().item(rowc,0).text())]
-            data = packet[5].packet_to_layerlist()
-            hexdata = packet[5].packet_to_hexdump()
+            data = packet_to_layerlist(packet[5])
+            hexdata = hexdump(packet[5],True)
 
             self.CreateNewTab(self.capture_ui.tabWidget,"hex",hexdata)
             for i in data:
@@ -313,8 +324,7 @@ class ProcessingThread(QThread):
 
     def showpkt(self, pkt):
         self.count += 1
-        pkt = packet_r.Packet_r(pkt)
-        packet_info = pkt.packet_to_layerlist()
+        packet_info = packet_to_layerlist(pkt)
         cur_time = time.asctime()
         src = packet_info[0][1]['src']
         dst = packet_info[0][1]['dst']
