@@ -1,21 +1,8 @@
-import os
-
-from PyQt5.QtCore import QPropertyAnimation
-import time
-
 from PyQt5.QtGui import QFont
-
-from scapy.layers.inet import icmptypes
-
-from netifaces import ifaddresses, AF_INET, AF_INET6
-import start_page
-import sys
 from scapy.all import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame
 from PyQt5.QtCore import QThread,pyqtSignal
 from PyQt5 import QtWidgets,QtCore,QtGui
-from ctypes import *
-import netifaces
 from start_page import Ui_MainWindow
 from capture_ui import Ui_Dialog
 
@@ -31,16 +18,16 @@ def expand(packet):
 def packet_to_layerlist(packet):
     return list(expand(packet))
 
+
 class parentWindow(QMainWindow):
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
         self.showInterfaces()
 
-
     def showInterfaces(self):
-
         self.data = IFACES.data
         res = []
         for iface_name in sorted(self.data):
@@ -48,52 +35,33 @@ class parentWindow(QMainWindow):
             mac = dev.mac
             mac = conf.manufdb._resolve_MAC(mac)
             res.append((str(dev.win_index), str(dev.name), str(dev.ip), mac))
-        # print(res)
-
         self.initTable()
-        # interfaces = win_get_key.get_interfaces()
         self.main_ui.tableWidget.setRowCount(len(res))
         rowcount = 0
         for i in res:
-            item0 = QtWidgets.QTableWidgetItem(i[0])
-            item0.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.main_ui.tableWidget.setItem(rowcount, 0, item0)
-
-            item1 = QtWidgets.QTableWidgetItem(i[1])
-            item1.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.main_ui.tableWidget.setItem(rowcount, 1, item1)
-
-            item2 = QtWidgets.QTableWidgetItem(i[2])
-            item2.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.main_ui.tableWidget.setItem(rowcount, 2, item2)
-
-            item3 = QtWidgets.QTableWidgetItem(i[3])
-            item3.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.main_ui.tableWidget.setItem(rowcount, 3, item3)
-
+            for j in range(len(i)):
+                item = QtWidgets.QTableWidgetItem(i[j])
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                self.main_ui.tableWidget.setItem(rowcount, j, item)
             rowcount += 1
         self.main_ui.tableWidget.itemDoubleClicked.connect(self.interfaceSelected)
 
     def initTable(self):
-        self.main_ui.tableWidget.setColumnCount(4)
-        self.main_ui.tableWidget.setHorizontalHeaderLabels(['index','iface','ip','mac'])
-        self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
+        labels = ['index','iface','ip','mac']
+        column_count = len(labels)
+        self.main_ui.tableWidget.setColumnCount(column_count)
+        self.main_ui.tableWidget.setHorizontalHeaderLabels(labels)
+        for i in range(column_count):
+            self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.main_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
 
     def interfaceSelected(self):
         self.hide()
 
+
 class childWindow(QDialog):
     def __init__(self):
         QDialog.__init__(self)
-
         self.packet_dict = {}
         self.srcset = set()
         self.dstset = set()
@@ -102,18 +70,15 @@ class childWindow(QDialog):
         self.capture_ui.setupUi(self)
         self.parentWindow = None
         self.capture_ui.pushButton.setText("Start")
-        self.capture_ui.comboBox_2.addItem('Any')
         self.capture_ui.comboBox.addItem('Any')
+        self.capture_ui.comboBox_2.addItem('Any')
         self.capture_ui.comboBox_3.addItem('Any')
         self.capture_ui.comboBox.currentIndexChanged.connect(self.filter_changed)
         self.capture_ui.comboBox_2.currentIndexChanged.connect(self.filter_changed)
         self.capture_ui.comboBox_3.currentIndexChanged.connect(self.filter_changed)
-
         self.capture_ui.pushButton.clicked.connect(self.start_capture)
         self.initTable()
         self.capture_ui.tableWidget.itemDoubleClicked.connect(self.show_info)
-
-
 
     def closeEvent(self,event):
         if self.parentWindow is not None:
@@ -132,70 +97,33 @@ class childWindow(QDialog):
         event.accept()
 
     def initTable(self):
-        self.capture_ui.tableWidget.setColumnCount(5)
-        self.capture_ui.tableWidget.setHorizontalHeaderLabels(['index','time','src','dst','protocol'])
-        self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
-        self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
-
+        labels = ['index','time','src','dst','protocol']
+        column_count = len(labels)
+        self.capture_ui.tableWidget.setColumnCount(column_count)
+        self.capture_ui.tableWidget.setHorizontalHeaderLabels(labels)
+        for i in range(column_count):
+            self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.capture_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
-
-
-    # 获取包信息
-
-
 
     def addPacket(self,packet_infolist):
         self.packet_dict[packet_infolist[0]] = packet_infolist
-        len_pre = len(self.srcset)
-        self.srcset.add(packet_infolist[2])
-        if len(self.srcset) - len_pre:
+        if packet_infolist[2] not in self.srcset:
+            self.srcset.add(packet_infolist[2])
             self.capture_ui.comboBox.addItem(packet_infolist[2])
-
-        len_pre = len(self.dstset)
-        self.dstset.add(packet_infolist[3])
-        if len(self.dstset) - len_pre:
+        if packet_infolist[3] not in self.dstset:
+            self.dstset.add(packet_infolist[3])
             self.capture_ui.comboBox_2.addItem(packet_infolist[3])
-
-        len_pre = len(self.protocolset)
-        self.protocolset.add(packet_infolist[4])
-        if len(self.protocolset) - len_pre:
+        if packet_infolist[4] not in self.protocolset:
+            self.protocolset.add(packet_infolist[4])
             self.capture_ui.comboBox_3.addItem(packet_infolist[4])
-
         if self.checksrc(packet_infolist) and self.checkdst(packet_infolist) and self.checkprotocol(packet_infolist):
             row = self.capture_ui.tableWidget.rowCount()
             self.capture_ui.tableWidget.setRowCount(row + 1)
-            # count
-            item0 = QtWidgets.QTableWidgetItem(str(packet_infolist[0]))
-            self.capture_ui.tableWidget.setItem(row, 0, item0)
-            item0.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            # time
-            item1 = QtWidgets.QTableWidgetItem(str(packet_infolist[1]))
-            self.capture_ui.tableWidget.setItem(row, 1, item1)
-            item1.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            # src
-            item2 = QtWidgets.QTableWidgetItem(str(packet_infolist[2]))
-            self.capture_ui.tableWidget.setItem(row, 2, item2)
-            item2.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            # dst
-            item3 = QtWidgets.QTableWidgetItem(str(packet_infolist[3]))
-            self.capture_ui.tableWidget.setItem(row, 3, item3)
-            item3.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            # protocol
-            item4 = QtWidgets.QTableWidgetItem(str(packet_infolist[4]))
-            self.capture_ui.tableWidget.setItem(row, 4, item4)
-            item4.setFlags(
-                QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            for i in range(5):
+                item = QtWidgets.QTableWidgetItem(str(packet_infolist[i]))
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                self.capture_ui.tableWidget.setItem(row, i, item)
             self.capture_ui.tableWidget.scrollToBottom()
-
-
-
 
     def stop_capture(self):
         try:
@@ -214,7 +142,6 @@ class childWindow(QDialog):
         self.capture_ui.pushButton.setText('Stop')
         self.capture_ui.pushButton.clicked.disconnect(self.start_capture)
         self.capture_ui.pushButton.clicked.connect(self.stop_capture)
-
 
     def resetbutton(self):
         self.capture_ui.pushButton.setText('Start')
@@ -246,35 +173,13 @@ class childWindow(QDialog):
             if self.checksrc(packet_infolist) and self.checkdst(packet_infolist) and self.checkprotocol(packet_infolist):
                 row = self.capture_ui.tableWidget.rowCount()
                 self.capture_ui.tableWidget.setRowCount(row + 1)
-                # count
-                item0 = QtWidgets.QTableWidgetItem(str(packet_infolist[0]))
-                self.capture_ui.tableWidget.setItem(row, 0, item0)
-                item0.setFlags(
-                    QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                # time
-                item1 = QtWidgets.QTableWidgetItem(str(packet_infolist[1]))
-                self.capture_ui.tableWidget.setItem(row, 1, item1)
-                item1.setFlags(
-                    QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                # src
-                item2 = QtWidgets.QTableWidgetItem(str(packet_infolist[2]))
-                self.capture_ui.tableWidget.setItem(row, 2, item2)
-                item2.setFlags(
-                    QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                # dst
-                item3 = QtWidgets.QTableWidgetItem(str(packet_infolist[3]))
-                self.capture_ui.tableWidget.setItem(row, 3, item3)
-                item3.setFlags(
-                    QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                # protocol
-                item4 = QtWidgets.QTableWidgetItem(str(packet_infolist[4]))
-                self.capture_ui.tableWidget.setItem(row, 4, item4)
-                item4.setFlags(
-                    QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                for i in range(5):
+                    item = QtWidgets.QTableWidgetItem(str(packet_infolist[i]))
+                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                    self.capture_ui.tableWidget.setItem(row, i, item)
                 self.capture_ui.tableWidget.scrollToBottom()
 
     def CreateNewTab(self, tab, title, content):
-
         a = QtWidgets.QTextBrowser()
         a.setFrameStyle(QFrame.NoFrame)
         a.setText(content)
@@ -295,7 +200,6 @@ class childWindow(QDialog):
             packet = self.packet_dict[int(self.sender().item(rowc,0).text())]
             data = packet_to_layerlist(packet[5])
             hexdata = hexdump(packet[5],True)
-
             self.CreateNewTab(self.capture_ui.tabWidget,"hex",hexdata)
             for i in data:
                 str1 = ""
@@ -354,10 +258,8 @@ def main():
     window = parentWindow()
     child = childWindow()
     child.set_parent_window(window)
-    # 通过toolButton将两个窗体关联
     window.main_ui.tableWidget.itemDoubleClicked.connect(child.show)
     window.show()
-    # 显示
     sys.exit(app.exec_())
 
 
