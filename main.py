@@ -20,7 +20,6 @@ def packet_to_layerlist(packet):
 
 
 class parentWindow(QMainWindow):
-
     def __init__(self):
         QMainWindow.__init__(self)
         self.main_ui = Ui_MainWindow()
@@ -236,10 +235,9 @@ class ProcessingThread(QThread):
         self.AddPacket.emit([self.count, cur_time, src, dst, protocol, pkt])
 
     def run(self):
-
         while self.isRunning:
             try:
-                sniff(prn=self.showpkt, iface=self.iface, count=1)
+                sniff(prn=self.showpkt, iface=self.iface, count=0)
             except Exception as e:
                 print(e)
                 self.StartErr.emit(e)
