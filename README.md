@@ -33,6 +33,9 @@ Then, we expand the packet, turn it into a list of tuples, each contains part of
 #### Multitasking
 Python3 does not truly support multithreading. However, PyQt does,  due to its backend written in C/C++, so we just run a main thread that interact with the user, while capturing the packets using another thread in the background.
 
-#### TODO
-Filter parser instead of multiple ComboBoxes.
+<br>
+
+##### TODO
+Filter parser instead of multiple ComboBoxes.<br>
+Move all decoding job to main thread.
 
