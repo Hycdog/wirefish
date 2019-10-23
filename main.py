@@ -1,6 +1,6 @@
 from PyQt5.QtGui import QFont
 from scapy.all import *
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame, QTableWidget
 from PyQt5.QtCore import QThread,pyqtSignal
 from PyQt5 import QtWidgets,QtCore,QtGui
 from start_page import Ui_MainWindow
@@ -63,6 +63,8 @@ class parentWindow(QMainWindow):
         for i in range(column_count):
             self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.main_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
+        self.main_ui.tableWidget.verticalHeader().setHidden(True)
+        self.main_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
 
     def interfaceSelected(self):
         self.hide()
@@ -113,6 +115,8 @@ class childWindow(QDialog):
         for i in range(column_count):
             self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.capture_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
+        self.capture_ui.tableWidget.verticalHeader().setHidden(True)
+        self.capture_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
 
     def addPacket(self,packet_infolist):
         self.packet_dict[packet_infolist[0]] = packet_infolist
@@ -196,7 +200,7 @@ class childWindow(QDialog):
         tab.addTab(a, title)
 
     def clearTable(self):
-        self.capture_ui.tableWidget.clear()
+        self.capture_ui.tableWidget.clearContents()
         self.capture_ui.tableWidget.setRowCount(0)
 
     def clearTab(self):
