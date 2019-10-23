@@ -8,7 +8,7 @@ Install the python3 packages listed in [requirements.txt](./requirements.txt). <
 On Windows Platform:<br>
 `python main.py`
 
-On Linux Platform, sniffing packets require root privilege.<br>
+On Linux Platform, sniffing packets requires root privilege.<br>
 `$ sudo python3 main.py`
 
 ### How does it work
