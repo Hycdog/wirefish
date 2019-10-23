@@ -5,7 +5,7 @@ from PyQt5.QtCore import QThread,pyqtSignal
 from PyQt5 import QtWidgets,QtCore,QtGui
 from start_page import Ui_MainWindow
 from capture_ui import Ui_Dialog
-
+import platform
 
 def expand(packet):
     x = packet
@@ -27,23 +27,33 @@ class parentWindow(QMainWindow):
         self.showInterfaces()
 
     def showInterfaces(self):
-        self.data = IFACES.data
         res = []
-        for iface_name in sorted(self.data):
-            dev = self.data[iface_name]
-            mac = dev.mac
-            mac = conf.manufdb._resolve_MAC(mac)
-            res.append((str(dev.win_index), str(dev.name), str(dev.ip), mac))
+        if platform.system() == "Windows":
+            self.data = IFACES.data
+            for iface_name in sorted(self.data):
+                dev = self.data[iface_name]
+                mac = dev.mac
+                mac = conf.manufdb._resolve_MAC(mac)
+                res.append((str(dev.win_index), str(dev.name), str(dev.ip), mac))
+
+        elif platform.system() == "Linux":
+            res = get_if_list()
+
         self.initTable()
         self.main_ui.tableWidget.setRowCount(len(res))
         rowcount = 0
         for i in res:
-            for j in range(len(i)):
-                item = QtWidgets.QTableWidgetItem(i[j])
+            if isinstance(i,str):
+                item = QtWidgets.QTableWidgetItem(i)
                 item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-                self.main_ui.tableWidget.setItem(rowcount, j, item)
+                self.main_ui.tableWidget.setItem(rowcount, 1, item)
+            else:
+                for j in range(len(i)):
+                    item = QtWidgets.QTableWidgetItem(i[j])
+                    item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+                    self.main_ui.tableWidget.setItem(rowcount, j, item)
             rowcount += 1
-        self.main_ui.tableWidget.itemDoubleClicked.connect(self.interfaceSelected)
+        self.main_ui.tableWidget.itemClicked.connect(self.interfaceSelected)
 
     def initTable(self):
         labels = ['index','iface','ip','mac']
@@ -77,7 +87,7 @@ class childWindow(QDialog):
         self.capture_ui.comboBox_3.currentIndexChanged.connect(self.filter_changed)
         self.capture_ui.pushButton.clicked.connect(self.start_capture)
         self.initTable()
-        self.capture_ui.tableWidget.itemDoubleClicked.connect(self.show_info)
+        self.capture_ui.tableWidget.itemClicked.connect(self.show_info)
 
     def closeEvent(self,event):
         if self.parentWindow is not None:
@@ -256,7 +266,7 @@ def main():
     window = parentWindow()
     child = childWindow()
     child.set_parent_window(window)
-    window.main_ui.tableWidget.itemDoubleClicked.connect(child.show)
+    window.main_ui.tableWidget.itemClicked.connect(child.show)
     window.show()
     sys.exit(app.exec_())
 
