@@ -65,6 +65,8 @@ class parentWindow(QMainWindow):
         self.main_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.main_ui.tableWidget.verticalHeader().setHidden(True)
         self.main_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
+        self.main_ui.tableWidget.setShowGrid(False)
+
 
     def interfaceSelected(self):
         self.hide()
@@ -90,6 +92,7 @@ class childWindow(QDialog):
         self.capture_ui.pushButton.clicked.connect(self.start_capture)
         self.initTable()
         self.capture_ui.tableWidget.itemClicked.connect(self.show_info)
+        self.index = 0
 
     def closeEvent(self,event):
         if self.parentWindow is not None:
@@ -103,8 +106,18 @@ class childWindow(QDialog):
         if self.sender is not None:
             rowc = self.sender().currentItem().row()
             self.setWindowTitle(self.sender().item(rowc,1).text())
-            self.clearTable()
             self.clearTab()
+            self.index = 0
+            self.srcset = set()
+            self.dstset = set()
+            self.protocolset = set()
+            self.capture_ui.comboBox.clear()
+            self.capture_ui.comboBox_2.clear()
+            self.capture_ui.comboBox_3.clear()
+            self.capture_ui.comboBox.addItem('Any')
+            self.capture_ui.comboBox_2.addItem('Any')
+            self.capture_ui.comboBox_3.addItem('Any')
+            self.clearTable()
         event.accept()
 
     def initTable(self):
@@ -117,9 +130,16 @@ class childWindow(QDialog):
         self.capture_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.capture_ui.tableWidget.verticalHeader().setHidden(True)
         self.capture_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
+        self.capture_ui.tableWidget.setShowGrid(False)
+        # self.capture_ui.tableWidget.setStyleSheet(
+        #     "QTableWidget::Item{border:0px solid rgb(255,0,0);"
+        #     "border-bottom:1px solid rgb(255,0,0);}"
+        # )
 
     def addPacket(self,packet_infolist):
-        self.packet_dict[packet_infolist[0]] = packet_infolist
+        self.index += 1
+        packet_infolist[0] = self.index
+        self.packet_dict[self.index] = packet_infolist
         if packet_infolist[2] not in self.srcset:
             self.srcset.add(packet_infolist[2])
             self.capture_ui.comboBox.addItem(packet_infolist[2])
@@ -180,8 +200,7 @@ class childWindow(QDialog):
             return self.capture_ui.comboBox_3.currentText() == packet[4]
 
     def filter_changed(self):
-        self.capture_ui.tableWidget.clear()
-        self.capture_ui.tableWidget.setRowCount(0)
+        self.clearTable()
         for packet_infolist in self.packet_dict.values():
             if self.checksrc(packet_infolist) and self.checkdst(packet_infolist) and self.checkprotocol(packet_infolist):
                 row = self.capture_ui.tableWidget.rowCount()
