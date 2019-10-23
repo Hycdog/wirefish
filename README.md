@@ -2,6 +2,16 @@
 
 In wirefish, we provide a very simple gui to select network interface, capture packets and decode packets. These functionalities are all based on Scapy.
 
+
+### Start the application
+Install the python3 packages listed in [requirements.txt](./requirements.txt). <br>
+On Windows Platform:<br>
+`python main.py`
+
+On Linux Platform, sniffing packets require root privilege.<br>
+`$ sudo python3 main.py`
+
+### How does it work
 #### Select a network interface
 In order to capture packets, first of all, we need to get the info about the network interfaces that we want to listen.
 Using scapy, for example, we only need to do this:<br>
