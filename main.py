@@ -105,7 +105,8 @@ class childWindow(QDialog):
     def showEvent(self, event):
         if self.sender is not None:
             rowc = self.sender().currentItem().row()
-            self.setWindowTitle(self.sender().item(rowc,1).text())
+            self.interface_name = self.sender().item(rowc,1).text()
+            self.setWindowTitle(self.interface_name + " " + self.sender().item(rowc,2).text())
             self.clearTab()
             self.index = 0
             self.srcset = set()
@@ -168,7 +169,7 @@ class childWindow(QDialog):
         self.capture_ui.pushButton.clicked.connect(self.start_capture)
 
     def start_capture(self):
-        self.capthread = ProcessingThread(self.windowTitle())
+        self.capthread = ProcessingThread(self.interface_name)
         self.capthread.AddPacket.connect(self.addPacket)
         self.capthread.StartErr.connect(self.resetbutton)
         self.capthread.start()
@@ -258,14 +259,35 @@ class ProcessingThread(QThread):
     def setIface(self,iface):
         self.iface = iface
 
+    def checkproto(self,protoint):
+        if protoint == 1: return "ICMP"
+        elif protoint == 2: return "IGMP"
+        elif protoint == 3: return "GGP"
+        elif protoint == 6: return "TCP"
+        elif protoint == 9: return "IGP"
+        elif protoint == 17: return "UDP"
+        elif protoint == 41: return "IPv6"
+        elif protoint == 58: return "ICMPv6"
+        else: return "Unknown ("+str(protoint)+")"
+
     def showpkt(self, pkt):
         self.count += 1
         packet_info = packet_to_layerlist(pkt)
         cur_time = time.asctime()
-        src = packet_info[0][1]['src']
-        dst = packet_info[0][1]['dst']
         protocol = packet_info[1][0]
-        self.AddPacket.emit([self.count, cur_time, src, dst, protocol, pkt])
+        if protocol == "IP":
+            base_protocol = self.checkproto(packet_info[1][1]['proto'])
+            src = packet_info[1][1]['src']
+            dst = packet_info[1][1]['dst']
+        elif protocol == "ARP":
+            base_protocol = protocol
+            src = packet_info[1][1]['psrc']
+            dst = packet_info[1][1]['pdst']
+        else:
+            base_protocol = protocol
+            src = packet_info[0][1]['src']
+            dst = packet_info[0][1]['dst']
+        self.AddPacket.emit([self.count, cur_time, src, dst, base_protocol, pkt])
 
     def run(self):
         while self.isRunning:
