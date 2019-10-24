@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QFont
 from scapy.all import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame, QTableWidget
-from PyQt5.QtCore import QThread,pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QCoreApplication
 from PyQt5 import QtWidgets,QtCore,QtGui
 from start_page import Ui_MainWindow
 from capture_ui import Ui_Dialog
@@ -64,6 +64,7 @@ class parentWindow(QMainWindow):
             self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.main_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.main_ui.tableWidget.verticalHeader().setHidden(True)
+        self.main_ui.tableWidget.setSelectionMode(QTableWidget.SingleSelection)
         self.main_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
         self.main_ui.tableWidget.setShowGrid(False)
 
@@ -91,7 +92,7 @@ class childWindow(QDialog):
         self.capture_ui.comboBox_3.currentIndexChanged.connect(self.filter_changed)
         self.capture_ui.pushButton.clicked.connect(self.start_capture)
         self.initTable()
-        self.capture_ui.tableWidget.itemClicked.connect(self.show_info)
+        self.capture_ui.tableWidget.itemSelectionChanged.connect(self.show_info)
         self.index = 0
 
     def closeEvent(self,event):
@@ -130,6 +131,7 @@ class childWindow(QDialog):
             self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
         self.capture_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.capture_ui.tableWidget.verticalHeader().setHidden(True)
+        self.capture_ui.tableWidget.setSelectionMode(QTableWidget.SingleSelection)
         self.capture_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
         self.capture_ui.tableWidget.setShowGrid(False)
         # self.capture_ui.tableWidget.setStyleSheet(
@@ -283,6 +285,10 @@ class ProcessingThread(QThread):
             base_protocol = protocol
             src = packet_info[1][1]['psrc']
             dst = packet_info[1][1]['pdst']
+        elif protocol == "IPv6":
+            base_protocol = protocol
+            src = packet_info[1][1]['src']
+            dst = packet_info[1][1]['dst']
         else:
             base_protocol = protocol
             src = packet_info[0][1]['src']
@@ -308,6 +314,7 @@ class ProcessingThread(QThread):
 
 def main():
     app = QApplication(sys.argv)
+    QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     window = parentWindow()
     child = childWindow()
     child.set_parent_window(window)
