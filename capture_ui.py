@@ -8,6 +8,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from utils.modifiedTableWidget import Table
 
 
 class Ui_Dialog(object):
@@ -18,7 +19,7 @@ class Ui_Dialog(object):
         self.gridLayout.setObjectName("gridLayout")
         spacerItem = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem, 5, 1, 1, 1)
-        self.tableWidget = QtWidgets.QTableWidget(Dialog)
+        self.tableWidget = Table()
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)

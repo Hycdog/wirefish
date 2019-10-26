@@ -1,11 +1,14 @@
 from PyQt5.QtGui import QFont
 from scapy.all import *
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame, QTableWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QTableWidgetItem, QFrame, QTableWidget, \
+    QAbstractItemView
 from PyQt5.QtCore import QThread, pyqtSignal, QCoreApplication
 from PyQt5 import QtWidgets,QtCore,QtGui
 from start_page import Ui_MainWindow
 from capture_ui import Ui_Dialog
+from utils.modifiedTableWidget import Table
 import platform
+
 
 def expand(packet):
     x = packet
@@ -24,26 +27,22 @@ class parentWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
+        self.setWindowTitle(" ")
         self.showInterfaces()
+        self.setMouseTracking(True)
 
     def showInterfaces(self):
-        res = []
-        if platform.system() == "Windows":
-            self.data = IFACES.data
-            for iface_name in sorted(self.data):
-                dev = self.data[iface_name]
-                mac = dev.mac
-                mac = conf.manufdb._resolve_MAC(mac)
-                res.append((str(dev.win_index), str(dev.name), str(dev.ip), mac))
-
-        elif platform.system() == "Linux":
-            res = get_if_list()
-
+        self.InterfaceThread = GetInterfaceThread(self.main_ui.tableWidget)
+        self.InterfaceThread.AddInterface.connect(self.addInterface)
         self.initTable()
+        self.InterfaceThread.start()
+        self.main_ui.tableWidget.itemClicked.connect(self.interfaceSelected)
+
+    def addInterface(self,res):
         self.main_ui.tableWidget.setRowCount(len(res))
         rowcount = 0
         for i in res:
-            if isinstance(i,str):
+            if isinstance(i, str):
                 item = QtWidgets.QTableWidgetItem(i)
                 item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                 self.main_ui.tableWidget.setItem(rowcount, 1, item)
@@ -53,20 +52,13 @@ class parentWindow(QMainWindow):
                     item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
                     self.main_ui.tableWidget.setItem(rowcount, j, item)
             rowcount += 1
-        self.main_ui.tableWidget.itemClicked.connect(self.interfaceSelected)
 
     def initTable(self):
         labels = ['index','iface','ip','mac']
         column_count = len(labels)
         self.main_ui.tableWidget.setColumnCount(column_count)
-        self.main_ui.tableWidget.setHorizontalHeaderLabels(labels)
         for i in range(column_count):
             self.main_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
-        self.main_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
-        self.main_ui.tableWidget.verticalHeader().setHidden(True)
-        self.main_ui.tableWidget.setSelectionMode(QTableWidget.SingleSelection)
-        self.main_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
-        self.main_ui.tableWidget.setShowGrid(False)
 
 
     def interfaceSelected(self):
@@ -94,6 +86,8 @@ class childWindow(QDialog):
         self.initTable()
         self.capture_ui.tableWidget.itemSelectionChanged.connect(self.show_info)
         self.index = 0
+        self.setMouseTracking(True)
+
 
     def closeEvent(self,event):
         if self.parentWindow is not None:
@@ -129,15 +123,6 @@ class childWindow(QDialog):
         self.capture_ui.tableWidget.setHorizontalHeaderLabels(labels)
         for i in range(column_count):
             self.capture_ui.tableWidget.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeToContents)
-        self.capture_ui.tableWidget.horizontalHeader().setStretchLastSection(True)
-        self.capture_ui.tableWidget.verticalHeader().setHidden(True)
-        self.capture_ui.tableWidget.setSelectionMode(QTableWidget.SingleSelection)
-        self.capture_ui.tableWidget.setSelectionBehavior(QTableWidget.SelectRows)
-        self.capture_ui.tableWidget.setShowGrid(False)
-        # self.capture_ui.tableWidget.setStyleSheet(
-        #     "QTableWidget::Item{border:0px solid rgb(255,0,0);"
-        #     "border-bottom:1px solid rgb(255,0,0);}"
-        # )
 
     def addPacket(self,packet_infolist):
         self.index += 1
@@ -158,6 +143,7 @@ class childWindow(QDialog):
             for i in range(5):
                 item = QtWidgets.QTableWidgetItem(str(packet_infolist[i]))
                 item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
                 self.capture_ui.tableWidget.setItem(row, i, item)
             self.capture_ui.tableWidget.scrollToBottom()
 
@@ -246,16 +232,55 @@ class childWindow(QDialog):
                 self.CreateNewTab(self.capture_ui.tabWidget,i[0],str1)
 
 
+class GetInterfaceThread(QThread):
+
+    AddInterface = pyqtSignal(list)
+
+    def __init__(self, table, parent=None):
+        QThread.__init__(self, parent=parent)
+        self.table = table
+
+    def get_interfaces(self):
+        res = []
+        if platform.system() == "Windows":
+            data = IFACES.data
+            for iface_name in sorted(data):
+                dev = data[iface_name]
+                mac = dev.mac
+                mac = conf.manufdb._resolve_MAC(mac)
+                res.append((str(dev.win_index), str(dev.name), str(dev.ip), mac))
+
+        elif platform.system() == "Linux":
+            res = get_if_list()
+
+        return res
+
+
+    def run(self):
+        if self.isRunning:
+            try:
+                res = self.get_interfaces()
+                self.AddInterface.emit(res)
+            except Exception as e:
+                print(e)
+                self.stop()
+
+    def stop(self):
+        self.isRunning = False
+        self.quit()
+        self.terminate()
+
+
+
 class ProcessingThread(QThread):
 
     AddPacket = pyqtSignal(list)
     Scroll = pyqtSignal(str)
     StartErr = pyqtSignal(Exception)
 
-    def __init__(self, iface, parent=None):
+    def __init__(self, interface, parent=None):
         QThread.__init__(self, parent=parent)
-        self.setIface(iface)
-        self.isRunning = True
+        self.iface = interface
         self.count = 0
 
     def setIface(self,iface):
@@ -272,7 +297,7 @@ class ProcessingThread(QThread):
         elif protoint == 58: return "ICMPv6"
         else: return "Unknown ("+str(protoint)+")"
 
-    def showpkt(self, pkt):
+    def get_packet(self, pkt):
         self.count += 1
         packet_info = packet_to_layerlist(pkt)
         cur_time = time.asctime()
@@ -298,7 +323,7 @@ class ProcessingThread(QThread):
     def run(self):
         while self.isRunning:
             try:
-                sniff(prn=self.showpkt, iface=self.iface, count=0)
+                sniff(prn=self.get_packet, iface=self.iface, count=0)
             except Exception as e:
                 print(e)
                 self.StartErr.emit(e)
@@ -309,7 +334,6 @@ class ProcessingThread(QThread):
         self.isRunning = False
         self.quit()
         self.terminate()
-        self.wait()
 
 
 def main():

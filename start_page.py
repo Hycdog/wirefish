@@ -8,7 +8,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from utils.modifiedTableWidget import Table
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -22,7 +22,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addItem(spacerItem, 1, 0, 1, 1)
         spacerItem1 = QtWidgets.QSpacerItem(20, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.gridLayout.addItem(spacerItem1, 0, 2, 1, 1)
-        self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
+        self.tableWidget = Table()
         self.tableWidget.setMaximumSize(QtCore.QSize(100000, 99999))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(0)
