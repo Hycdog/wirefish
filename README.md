@@ -1,7 +1,4 @@
-# wirefish
-
-In wirefish, we provide a very simple gui to select network interface, capture packets and decode packets. These functionalities are all based on Scapy.
-
+A graphical user interface for scapy.
 
 ### Start the application
 Install the python3 packages listed in [requirements.txt](./requirements.txt). <br>
